@@ -1,5 +1,18 @@
 #include <cinttypes>
+#include <unordered_set>
+#include <unordered_map>
+#include <utility>
+#include <iostream>
 #include <cstdio>
+
+// TODO:
+// Globalna mapa identyfikator tablicy hashującej - wskaźnik na tablica hashująca
+// Czy typ funkcji musi być widoczny?
+// tablica hashująca jako set uint64_t
+
+// Typ funkcji hashującej, która przyjmuje wskaźnik na tablicę uint64_t oraz
+// rozmiar tablicy i zwraca jedną liczbę uint64_t będącą hashem 
+// ciągu liczbowego zawartego w podanej tablicy.
 
 using hash_function_t = uint64_t (*)(uint64_t const *, size_t);
 
