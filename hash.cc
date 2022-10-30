@@ -1,8 +1,47 @@
 #include "hash.h"
 
-using hash_array = std::pair<   std::unordered_set<uint64_t> *, 
-                                const hash_function_t> *;
-using hash_array_map = std::unordered_map<unsigned long, hash_array>;
+#include <unordered_set>
+#include <unordered_map>
+#include <utility>
+#include <iostream>
+
+namespace {
+    struct VectorEquals {
+    public:
+    bool operator()( std::pair<const uint64_t *, const size_t> const seq1,
+                     std::pair<const uint64_t *, const size_t> const seq2)
+                     const {
+        if (seq1.second != seq2.second) 
+            return false;
+        for (size_t it = 0; it < seq1.second; it++) {
+            if (seq1.first[it] != seq2.first[it])
+                return false;
+        }
+        return true;
+    }
+    };
+
+    struct HashingObject {
+    public:
+    hash_function_t function;
+    HashingObject(hash_function_t function) {
+        this->function = function;
+    }
+    uint64_t operator()(  std::pair<
+                            const uint64_t *, 
+                            const size_t
+                            > const seq1)
+                        const {
+        return function(seq1.first, seq1.second);
+    }
+    };
+}
+
+using hash_array = std::unordered_set<
+                    std::pair<const uint64_t *, size_t>,
+                    HashingObject, 
+                    VectorEquals>;
+using hash_array_map = std::unordered_map<unsigned long, hash_array *>;
 
 unsigned long next_usable_identifier = 0;
 hash_array_map all_arrays;
@@ -12,13 +51,11 @@ hash_array_map all_arrays;
 // liczbę uint64_t i ma kolejno parametry uint64_t const * oraz size_t.
 
 unsigned long hash_create(hash_function_t hash_function) {
-    std::unordered_set<uint64_t> array;
-    const hash_function_t function_copy = hash_function;
-    std::pair<  std::unordered_set<uint64_t> *, 
-                const hash_function_t> array_with_function = 
-                {&array, hash_function};
-    all_arrays.insert({next_usable_identifier, &array_with_function});
-    return next_usable_identifier++;
+    HashingObject Hashing = HashingObject(hash_function);
+    hash_array *array = new hash_array(0, Hashing);
+    all_arrays.insert({next_usable_identifier, array});
+    next_usable_identifier++;
+    return next_usable_identifier - 1;
 }
 
 // Usuwa tablicę haszującą o identyfikatorze id, o ile ona istnieje.
@@ -33,7 +70,7 @@ void hash_delete(unsigned long id) {
 
 size_t hash_size(unsigned long id) {
     try {
-        return (*((*(all_arrays.at(id))).first)).size();
+        return ((*(all_arrays.at(id)))).size();
     } catch (std::out_of_range) {
         return 0;
     }
@@ -50,9 +87,12 @@ bool hash_insert(unsigned long id, uint64_t const * seq, size_t size) {
         return false;
     }
     try {
-        hash_array to_insert_to = all_arrays.at(id);
-        uint64_t hash = (*((*to_insert_to).second))(seq, size);
-        return ((*((*to_insert_to).first)).insert(hash)).second;
+        hash_array *to_insert_to = all_arrays.at(id);
+        uint64_t * seqcopy = new uint64_t[size];
+        for (size_t it = 0; it < size; it++) {
+            seqcopy[it] = seq[it];
+        }
+        return ((*to_insert_to).insert(std::make_pair(seqcopy, size))).second;
     } catch (std::out_of_range) {
         return false;
     }
@@ -69,9 +109,8 @@ bool hash_remove(unsigned long id, uint64_t const * seq, size_t size) {
         return false;
     }
     try {
-        hash_array to_insert_to = all_arrays.at(id);
-        uint64_t hash = (*((*to_insert_to).second))(seq, size);
-        return ((*((*to_insert_to).first)).erase(hash));
+        hash_array *to_insert_to = all_arrays.at(id);
+        return ((*to_insert_to).erase(std::make_pair(seq, size)) == 1);
     } catch (std::out_of_range) {
         return false;
     }
@@ -82,11 +121,9 @@ bool hash_remove(unsigned long id, uint64_t const * seq, size_t size) {
 
 void hash_clear(unsigned long id) {
     try {
-        hash_array to_insert_to = all_arrays.at(id);
-        ((*((*to_insert_to).first)).clear());
-    } catch (std::out_of_range) {
-
-    }
+        hash_array *to_insert_to = all_arrays.at(id);
+        (*to_insert_to).clear();
+    } catch (std::out_of_range) {}
 }
 
 // Daje wynik true, jeśli istnieje tablica haszująca o identyfikatorze id
@@ -99,11 +136,10 @@ bool hash_test(unsigned long id, uint64_t const * seq, size_t size) {
         return false;
     }
     try {
-        hash_array to_insert_to = all_arrays.at(id);
-        uint64_t hash = (*((*to_insert_to).second))(seq, size);
+        hash_array *to_insert_to = all_arrays.at(id);
         return (
-                (*((*to_insert_to).first)).find(hash) != 
-                (*((*to_insert_to).first)).end()
+                (*to_insert_to).find(std::make_pair(seq, size)) != 
+                (*to_insert_to).end()
             );
     } catch (std::out_of_range) {
         return false;

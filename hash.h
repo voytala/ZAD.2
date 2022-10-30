@@ -1,20 +1,25 @@
-#include <cinttypes>
-#include <unordered_set>
-#include <unordered_map>
-#include <utility>
-#include <iostream>
-#include <cstdio>
+#ifndef HASH_H
+#define HASH_H
 
-// TODO:
-// Globalna mapa identyfikator tablicy hashującej - wskaźnik na tablica hashująca
-// Czy typ funkcji musi być widoczny?
-// tablica hashująca jako set uint64_t
+
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
+#include <stdio.h>
+#include <inttypes.h>
+
+// Nie wiem dlaczego poniższe nie działa
+//using hash_function_t = uint64_t (*)(uint64_t const *, size_t);
+
+typedef uint64_t (*hash_function_t) (uint64_t const *, size_t);
 
 // Typ funkcji hashującej, która przyjmuje wskaźnik na tablicę uint64_t oraz
 // rozmiar tablicy i zwraca jedną liczbę uint64_t będącą hashem 
 // ciągu liczbowego zawartego w podanej tablicy.
 
-using hash_function_t = uint64_t (*)(uint64_t const *, size_t);
+
 
 // Tworzy tablicę haszującą i zwraca jej identyfikator. Parametr
 // hash_function jest wskaźnikiem na funkcję haszującą, która daje w wyniku
@@ -59,3 +64,10 @@ void hash_clear(unsigned long id);
 // parametr size ma wartość 0.
 
 bool hash_test(unsigned long id, uint64_t const * seq, size_t size);
+
+#ifdef __cplusplus
+  }
+#endif
+
+
+#endif
