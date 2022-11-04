@@ -1,19 +1,23 @@
 #ifndef HASH_H
 #define HASH_H
 
-
-
 #ifdef __cplusplus
+  #include<cstdlib>
+  #include<cstdint>
+  #include<cstddef>
+  using hash_function_t = uint64_t(*)(uint64_t const *, size_t);
   extern "C" {
+    namespace jnp1 {
+      unsigned long hash_create(hash_function_t hash_function);
+#else
+  #include <stdio.h>
+  #include <inttypes.h>
+  #include <stddef.h>
+  unsigned long hash_create(uint64_t (*hash_function) (uint64_t const *, size_t));
 #endif
 
-#include <stdio.h>
-#include <inttypes.h>
-
-// Nie wiem dlaczego poniższe nie działa
-//using hash_function_t = uint64_t (*)(uint64_t const *, size_t);
-
-typedef uint64_t (*hash_function_t) (uint64_t const *, size_t);
+// Nie wiem dlaczego nie można po prostu użyć using.
+//typedef uint64_t (*hash_function_t) (uint64_t const *, size_t);
 
 // Typ funkcji hashującej, która przyjmuje wskaźnik na tablicę uint64_t oraz
 // rozmiar tablicy i zwraca jedną liczbę uint64_t będącą hashem 
@@ -25,7 +29,7 @@ typedef uint64_t (*hash_function_t) (uint64_t const *, size_t);
 // hash_function jest wskaźnikiem na funkcję haszującą, która daje w wyniku
 // liczbę uint64_t i ma kolejno parametry uint64_t const * oraz size_t.
 
-unsigned long hash_create(hash_function_t hash_function);
+//unsigned long hash_create(hash_function_t hash_function);
 
 // Usuwa tablicę haszującą o identyfikatorze id, o ile ona istnieje.
 // W przeciwnym przypadku nic nie robi.
@@ -66,7 +70,8 @@ void hash_clear(unsigned long id);
 bool hash_test(unsigned long id, uint64_t const * seq, size_t size);
 
 #ifdef __cplusplus
-  }
+  } // extern "C"
+  } // namespace jnp1
 #endif
 
 
